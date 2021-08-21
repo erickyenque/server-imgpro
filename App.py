@@ -39,8 +39,14 @@ def processing():
     if request.method == 'POST':
         json_data = request.json
         names = json_data["names"]
-        ppimg.init(names)
-        return "" + str(names)
+        rutas = ppimg.init(names)
+
+        response = app.response_class(
+            response = json.dumps({ "names": rutas}),
+            status = 200,
+            mimetype = 'application/json'
+        )
+        return response
 
 if __name__ == '__main__':
     app.run(port = 3000, debug = True)

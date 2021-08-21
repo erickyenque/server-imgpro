@@ -10,6 +10,7 @@ from multiprocessing import Pool
 from datetime import datetime
 from matplotlib import pyplot as plt
 from scipy import ndimage, signal
+import time
 
 def nameFile():
     return str(int(round(time.time() * 1000))) + '.jpg'
@@ -132,4 +133,4 @@ def init(nameFiles):
         result = p.map(processImage, rutas)
         te = datetime.now()
         print(f'Terminado en {te-ts}')
-        print (result)
+        return result
