@@ -119,18 +119,14 @@ def processImage(ruta):
     image = cv2.imread(ruta)
     brillo_result, alpha, beta = automatic_brightness_and_contrast(image)
     enfoque_result = mascEnfoque(brillo_result)
-    ruta = os.getcwd().replace("\\", "/") + '/imgs-process/' + nameFile()
+    file = nameFile()
+    ruta = os.getcwd().replace("\\", "/") + '/imgs-process/' + file
     cv2.imwrite(ruta, enfoque_result)
-    return ruta
+    return file
 
 
 def init(nameFiles):
-    print(type(nameFiles))
     rutas = concatenar(nameFiles)
-    print(rutas)
     with Pool(4) as p:
-        ts = datetime.now()
         result = p.map(processImage, rutas)
-        te = datetime.now()
-        print(f'Terminado en {te-ts}')
         return result

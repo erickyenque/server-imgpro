@@ -2,9 +2,11 @@ from flask import Flask, request, json
 import os
 import time
 import ppimg
+import base64
 
 app = Flask(__name__)
 app.config['UPLOAD_IMAGES'] = './imgs-upload'
+app.config['PROCESS_IMAGES'] = './imgs-process'
 
 def nameFile():
     return str(int(round(time.time() * 1000))) + '.jpg'
@@ -43,6 +45,20 @@ def processing():
 
         response = app.response_class(
             response = json.dumps({ "names": rutas}),
+            status = 200,
+            mimetype = 'application/json'
+        )
+        return response
+
+@app.route('/image', methods=['GET'])
+def image():
+    filename = request.args.get('filename')
+    with open(os.path.join(app.config['PROCESS_IMAGES'], filename), "rb") as image_file:
+        encoded = base64.b64encode(image_file.read())
+        data = encoded.decode('ascii') 
+
+        response = app.response_class(
+            response = json.dumps({ "filename": filename, "base64": data }),
             status = 200,
             mimetype = 'application/json'
         )
