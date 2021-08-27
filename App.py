@@ -3,8 +3,12 @@ import os
 import time
 import ppimg
 import base64
+from flask_cors import CORS, cross_origin
+import requests
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['UPLOAD_IMAGES'] = './imgs-upload'
 app.config['PROCESS_IMAGES'] = './imgs-process'
 
@@ -17,6 +21,7 @@ def Index():
 
 
 @app.route('/upload', methods=["POST"])
+@cross_origin()
 def upload():
     if request.method == 'POST':
 
@@ -37,6 +42,7 @@ def upload():
         return response
 
 @app.route('/processing', methods=["POST"])
+@cross_origin()
 def processing():
     if request.method == 'POST':
         json_data = request.json
@@ -51,8 +57,20 @@ def processing():
         return response
 
 @app.route('/image', methods=['GET'])
+@cross_origin()
 def image():
     filename = request.args.get('filename')
+
+    response = requests.post(
+        'https://sdk.photoroom.com/v1/segment',
+        headers={'x-api-key': '302937c00bf3f8eb2727f91d9734a35e0bcd7eb7'},
+        files={'image_file': open(os.path.join(app.config['PROCESS_IMAGES'], filename), 'rb')},
+    )
+
+    response.raise_for_status()
+    with open(os.path.join(app.config['PROCESS_IMAGES'], filename), 'wb') as f:
+        f.write(response.content)
+
     with open(os.path.join(app.config['PROCESS_IMAGES'], filename), "rb") as image_file:
         encoded = base64.b64encode(image_file.read())
         data = encoded.decode('ascii') 
