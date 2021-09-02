@@ -1,16 +1,18 @@
-from flask import Flask, request, json
+from flask import Flask, request, json, send_from_directory
 import os
 import time
 import ppimg
 import base64
 from flask_cors import CORS, cross_origin
 import requests
+from zipfile import *
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['UPLOAD_IMAGES'] = './imgs-upload'
 app.config['PROCESS_IMAGES'] = './imgs-process'
+app.config['COMPRESS_IMAGES'] = './static'
 
 def nameFile():
     return str(int(round(time.time() * 1000))) + '.jpg'
@@ -81,6 +83,31 @@ def image():
             mimetype = 'application/json'
         )
         return response
+
+@app.route('/compress', methods=['POST'])
+@cross_origin()
+def compress():
+    if request.method == 'POST':
+        json_data = request.json
+        names = json_data["names"]
+        #Creando zip
+        filename = str(int(round(time.time() * 1000))) + '.zip'
+        with ZipFile(os.path.join(app.config['COMPRESS_IMAGES'], filename), 'w') as zipObj:
+            for n in names:
+                zipObj.write(os.path.join(app.config['PROCESS_IMAGES'], n))
+
+        response = app.response_class(
+            response = json.dumps({ "filename": filename }),
+            status = 200,
+            mimetype = 'application/json'
+        )
+        return response
+
+@app.route("/static/<path:path>")
+def static_dir(path):
+    return send_from_directory("static", path)
+        
+
 
 if __name__ == '__main__':
     app.run(port = 3000, debug = True)
