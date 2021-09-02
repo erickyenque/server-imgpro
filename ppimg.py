@@ -87,37 +87,48 @@ def apply_filter(img, kernel):  # rutina para aplicarle el filtro a la imagen
 # BRILLO Y CONTRASTE
 
 
-def automatic_brightness_and_contrast(image, clip_hist_percent=1):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # Calcular histograma de escala de grises
-    hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
-    hist_size = len(hist)
-    # Calcular distribución acumalada desde el histograma
-    accumulator = []
-    accumulator.append(float(hist[0]))
-    for index in range(1, hist_size):
-        accumulator.append(accumulator[index - 1] + float(hist[index]))
-    # Localizar puntos para recortar
-    maximum = accumulator[-1]
-    clip_hist_percent *= (maximum/100.0)
-    clip_hist_percent /= 2.0
-    # Localizar corte izquierdo
-    minimum_gray = 0
-    while accumulator[minimum_gray] < clip_hist_percent:
-        minimum_gray += 1
-    # Localizar corte derecho
-    maximum_gray = hist_size - 1
-    while accumulator[maximum_gray] >= (maximum - clip_hist_percent):
-        maximum_gray -= 1
-    # Calcular valores de alpha y beta
-    alpha = 255 / (maximum_gray - minimum_gray)
-    beta = -minimum_gray * alpha
-    auto_result = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
-    return (auto_result, alpha, beta)
+def automatic_brightness_and_contrast(ruta, image, clip_hist_percent=1):
+    if get_lightness(image) > 130:
+        print('Suficiente brillo',ruta)
+        return(image)
+    else:
+        print('Se aumentó brillo')
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # Calcular histograma de escala de grises
+        hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
+        hist_size = len(hist)
+        # Calcular distribución acumalada desde el histograma
+        accumulator = []
+        accumulator.append(float(hist[0]))
+        for index in range(1, hist_size):
+            accumulator.append(accumulator[index - 1] + float(hist[index]))
+        # Localizar puntos para recortar
+        maximum = accumulator[-1]
+        clip_hist_percent *= (maximum/100.0)
+        clip_hist_percent /= 2.0
+        # Localizar corte izquierdo
+        minimum_gray = 0
+        while accumulator[minimum_gray] < clip_hist_percent:
+            minimum_gray += 1
+        # Localizar corte derecho
+        maximum_gray = hist_size - 1
+        while accumulator[maximum_gray] >= (maximum - clip_hist_percent):
+            maximum_gray -= 1
+        # Calcular valores de alpha y beta
+        alpha = 255 / (maximum_gray - minimum_gray)
+        beta = -minimum_gray * alpha
+        auto_result = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
+        return (auto_result)       
+
+#Obtenemos nivel de brillo de la imagen
+def get_lightness(src):
+    hsv_image = cv2.cvtColor(src, cv2.COLOR_BGR2HSV)
+    lightness = hsv_image[:,:,2].mean()    
+    return  lightness
 
 def processImage(ruta):
     image = cv2.imread(ruta)
-    brillo_result, alpha, beta = automatic_brightness_and_contrast(image)
+    brillo_result = automatic_brightness_and_contrast(ruta,image)
     enfoque_result = mascEnfoque(brillo_result)
     file = nameFile()
     ruta = os.getcwd().replace("\\", "/") + '/imgs-process/' + file
@@ -126,7 +137,11 @@ def processImage(ruta):
 
 
 def init(nameFiles):
+    
     rutas = concatenar(nameFiles)
     with Pool(4) as p:
+        ts = time.time()
         result = p.map(processImage, rutas)
+        te = time.time()
+        print("Procesado en:", te-ts)
         return result

@@ -4,6 +4,7 @@ import time
 import ppimg
 import base64
 from flask_cors import CORS, cross_origin
+from PIL import Image
 import requests
 from zipfile import *
 
@@ -34,6 +35,14 @@ def upload():
         for f in uploaded_files:
             filename = nameFile()
             f.save(os.path.join(app.config['UPLOAD_IMAGES'], filename))
+
+            basewidth = 1000
+            img = Image.open(os.path.join(app.config['UPLOAD_IMAGES'], filename))
+            wpercent = (basewidth / float(img.size[0]))
+            hsize = int((float(img.size[1]) * float(wpercent)))
+            img = img.resize((basewidth, hsize), Image.ANTIALIAS)
+            img.save(os.path.join(app.config['UPLOAD_IMAGES'], filename))
+
             names.append(filename)
 
         response = app.response_class(
